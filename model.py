@@ -14,6 +14,17 @@ def dncnn(input, is_training=True, output_channels=1):
         output = tf.layers.conv2d(output, output_channels, 3, padding='same')
     return input - output
 
+def dncnn_resid(input, is_training=True, output_channels=1):
+    with tf.variable_scope('block1'):
+        output = tf.layers.conv2d(input, 64, 3, padding='same', activation=tf.nn.relu)
+    for layers in xrange(2, 16 + 1):
+        with tf.variable_scope('block%d' % layers):
+            output = tf.layers.conv2d(output, 64, 3, padding='same', name='conv%d' % layers, use_bias=False)
+            output = tf.nn.relu(tf.layers.batch_normalization(output, training=is_training))
+    with tf.variable_scope('block17'):
+        output = tf.layers.conv2d(output, output_channels, 3, padding='same')
+    return output
+
 
 class denoiser(object):
     def __init__(self, sess, input_c_dim=1, sigma=25, batch_size=128):
@@ -24,7 +35,7 @@ class denoiser(object):
         self.Y_ = tf.placeholder(tf.float32, [None, None, None, self.input_c_dim],
                                  name='clean_image')
         self.is_training = tf.placeholder(tf.bool, name='is_training')
-        self.X = self.Y_ + tf.random_normal(shape=tf.shape(self.Y_), stddev=self.sigma / 255.0)  # noisy images
+        self.X = self.Y_ #+ tf.random_normal(shape=tf.shape(self.Y_), stddev=self.sigma / 255.0)  # noisy images
         # self.X = self.Y_ + tf.truncated_normal(shape=tf.shape(self.Y_), stddev=self.sigma / 255.0)  # noisy images
         self.Y = dncnn(self.X, is_training=self.is_training)
         self.loss = (1.0 / batch_size) * tf.nn.l2_loss(self.Y_ - self.Y)
@@ -66,6 +77,13 @@ class denoiser(object):
         output_clean_image, noisy_image, psnr = self.sess.run([self.Y, self.X, self.eva_psnr],
                                                               feed_dict={self.Y_: data, self.is_training: False})
         return output_clean_image, noisy_image, psnr
+    
+    
+    def noise_resid(self, data):
+        output_clean_image, noisy_image, psnr = self.sess.run([self.Y, self.X, self.eva_psnr],
+                                                              feed_dict={self.Y_: data, self.is_training: False})
+        return noisy_image - output_clean_image
+    
 
     def train(self, data, eval_data, batch_size, ckpt_dir, epoch, lr, sample_dir, eval_every_epoch=2):
         # assert data range is between 0 and 1
