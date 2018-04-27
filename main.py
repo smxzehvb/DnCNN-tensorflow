@@ -12,12 +12,14 @@ parser.add_argument('--batch_size', dest='batch_size', type=int, default=128, he
 parser.add_argument('--lr', dest='lr', type=float, default=0.001, help='initial learning rate for adam')
 parser.add_argument('--use_gpu', dest='use_gpu', type=int, default=1, help='gpu flag, 1 for GPU and 0 for CPU')
 parser.add_argument('--sigma', dest='sigma', type=int, default=25, help='noise level')
-parser.add_argument('--phase', dest='phase', default='train', help='train or test')
+parser.add_argument('--phase', dest='phase', default='train', help='train or test or resid')
 parser.add_argument('--checkpoint_dir', dest='ckpt_dir', default='./checkpoint', help='models are saved here')
 parser.add_argument('--sample_dir', dest='sample_dir', default='./sample', help='sample are saved here')
 parser.add_argument('--test_dir', dest='test_dir', default='./test', help='test sample are saved here')
+parser.add_argument('--resid_dir', dest='resid_dir', default='./resid', help='noise residuals are saved here')
 parser.add_argument('--eval_set', dest='eval_set', default='Set12', help='dataset for eval in training')
 parser.add_argument('--test_set', dest='test_set', default='BSD68', help='dataset for testing')
+parser.add_argument('--image_file', dest='image_file', default='./01.png', help='image file')
 args = parser.parse_args()
 
 
@@ -34,6 +36,9 @@ def denoiser_train(denoiser, lr):
 def denoiser_test(denoiser):
     test_files = glob('./data/test/{}/*.png'.format(args.test_set))
     denoiser.test(test_files, ckpt_dir=args.ckpt_dir, save_dir=args.test_dir)
+
+def noise_extract(denoiser):
+    denoiser.noise_resid(args.image_file, ckpt_dir=args.ckpt_dir, save_dir=args.resid_dir)
 
 
 def main(_):
@@ -56,6 +61,8 @@ def main(_):
                 denoiser_train(model, lr=lr)
             elif args.phase == 'test':
                 denoiser_test(model)
+            elif args.phase == 'resid':
+                noise_extract(model)
             else:
                 print('[!]Unknown phase')
                 exit(0)
@@ -67,6 +74,8 @@ def main(_):
                 denoiser_train(model, lr=lr)
             elif args.phase == 'test':
                 denoiser_test(model)
+            elif args.phase == 'resid':
+                noise_extract(model)
             else:
                 print('[!]Unknown phase')
                 exit(0)

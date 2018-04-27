@@ -79,10 +79,25 @@ class denoiser(object):
         return output_clean_image, noisy_image, psnr
     
     
-    def noise_resid(self, data):
+    def noise_resid(self, image_file, ckpt_dir, save_dir):
+        # init variables
+        tf.initialize_all_variables().run()
+        #assert len(test_files) != 0, 'No testing data!'
+        load_model_status, global_step = self.load(ckpt_dir)
+        assert load_model_status == True, '[!] Load weights FAILED...'
+        print(" [*] Load weights SUCCESS...")
+
+        image = load_images(image_file).astype(np.float32) / 255.0
         output_clean_image, noisy_image, psnr = self.sess.run([self.Y, self.X, self.eva_psnr],
-                                                              feed_dict={self.Y_: data, self.is_training: False})
-        return noisy_image - output_clean_image
+                                                              feed_dict={self.Y_: image, self.is_training: False})
+        groundtruth = np.clip(255 * image, 0, 255).astype('uint8')
+
+        outputimage = np.clip(255 * output_clean_image, 0, 255).astype('uint8')
+
+        resid= groundtruth - outputimage
+        save_images(os.path.join(save_dir, 'rp.png'), resid)
+        
+
     
 
     def train(self, data, eval_data, batch_size, ckpt_dir, epoch, lr, sample_dir, eval_every_epoch=2):
