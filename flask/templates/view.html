@@ -1,0 +1,46 @@
+<html>
+<head>
+<style>
+body{
+    background-color: #3c4142;
+    border: 5px solid #33b864;
+    color: #d4ffff;
+}
+
+table, th, td, tr{
+    border: 2px solid black;
+    corder-collapse: collapse;
+}
+
+th {
+    background-color: #58D68D;
+    color: black;
+
+}
+
+
+</style>
+</head>
+<body>
+
+<center>
+
+<h1> Results
+</h1>
+
+
+<table>
+    <tr>
+    {% for x in n %}
+        <td><img src='static/{{orig[x]}}' />
+        </td>
+        <td> <img src='static/{{denoise[x]}}'/>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+</center>
+</body>
+</html>
+
