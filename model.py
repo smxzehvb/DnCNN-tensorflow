@@ -1,5 +1,5 @@
 import time
-
+from skimage import img_as_float
 from utils import *
 
 
@@ -78,7 +78,7 @@ class denoiser(object):
                                                               feed_dict={self.Y_: data, self.is_training: False})
         return output_clean_image, noisy_image, psnr
     
-    
+        
     def noise_resid(self, image_file, ckpt_dir, save_dir):
         # init variables
         tf.initialize_all_variables().run()
@@ -88,14 +88,17 @@ class denoiser(object):
         print(" [*] Load weights SUCCESS...")
 
         image = load_images(image_file).astype(np.float32) / 255.0
-        output_clean_image, noisy_image, psnr = self.sess.run([self.Y, self.X, self.eva_psnr],
-                                                              feed_dict={self.Y_: image, self.is_training: False})
-        groundtruth = np.clip(255 * image, 0, 255).astype('uint8')
+        output_clean_image, noisy_image, psnr = self.sess.run([self.Y, self.X, self.eva_psnr], feed_dict={self.Y_: image, self.is_training: False})
 
-        outputimage = np.clip(255 * output_clean_image, 0, 255).astype('uint8')
+        #resid= image - output_clean_image
+        #resid = np.clip(255 * resid, 0, 255).astype('uint8')
+        groundtruth = np.clip(255.0 * image, 0.0, 255.5).astype('uint8')
+        outputimage = np.clip(255.0*output_clean_image, 0.0, 255.0).astype('uint8')
 
-        resid= groundtruth - outputimage
-        save_images(os.path.join(save_dir, 'rp.png'), resid)
+        resid= np.subtract(groundtruth, outputimage)
+        resid_as_byte = np.clip(255.0 * (np.subtract(image,output_clean_image)), 0.0, 255.0).astype('uint8')
+        #save_images(os.path.join(save_dir, 'rp.png'), resid)
+        return output_clean_image, resid, resid_as_byte
         
 
     

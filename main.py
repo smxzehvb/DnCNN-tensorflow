@@ -1,6 +1,6 @@
 import argparse
 from glob import glob
-
+from skimage import img_as_float 
 import tensorflow as tf
 
 from model import denoiser
